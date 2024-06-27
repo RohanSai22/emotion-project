@@ -1,8 +1,8 @@
 import threading
 import webbrowser
-from tkinter import *    # GUI
-from tkinter import ttk  # GUI
-from PIL import Image, ImageTk    # pip install pillow for image
+from tkinter import *
+from tkinter import ttk
+from PIL import Image, ImageTk
 from tkinter import messagebox
 import requests
 import cv2
@@ -11,7 +11,7 @@ from keras.models import load_model
 from keras.models import model_from_json
 from tensorflow.keras.utils import img_to_array
 from keras.preprocessing import image
-
+import os
 
 def fetch_joke():
     try:
@@ -24,19 +24,20 @@ def fetch_joke():
     except:
         return "Failed to fetch joke."
 
-
 def fetch_songs(genre):
     try:
         api_key = 'f9b011c9'  # Replace with your actual API key
         response = requests.get(f"https://api.jamendo.com/v3.0/tracks/?client_id={api_key}&format=json&limit=1&tags={genre}")
         if response.status_code == 200:
             song = response.json()
-            return song['results'][0]['audio']
+            if song['results']:
+                return song['results'][0]['audio']
+            else:
+                return "No songs available in this genre."
         else:
-            return "No songs available at the moment."
+            return "Failed to fetch songs."
     except:
         return "Failed to fetch songs."
-
 
 def get_suggestion(emotion):
     suggestions = {
@@ -48,48 +49,43 @@ def get_suggestion(emotion):
         'Fear': [fetch_songs('Ambient'), 'Try meditation'],
         'Disgust': [fetch_songs('Soul'), 'Watch a funny video']
     }
-    return suggestions.get(emotion, ["No suggestion available"])[0]
-
+    return suggestions.get(emotion, ["No suggestion available"])
 
 def open_url(url):
     webbrowser.open_new(url)
 
-
-def call_GUI1():  # for Static Button
+def call_GUI1():
     win2 = Toplevel(root)
     Second_Window(win2)
     return
 
-
-def call_GUI2():  # For Real Time Button
+def call_GUI2():
     win3 = Toplevel(root)
     Third_Window(win3)
     return
-
 
 class First_Window:
     def __init__(self, root):
         self.root = root
         self.root.title("Main")
 
-        screen_width = root.winfo_screenwidth()  # Fetching screen width
-        screen_height = root.winfo_screenheight()  # Fetching screen height
-        root.geometry(f'{screen_width}x{screen_height - 100}')  # Geometry For main window and -100 so that it will not loss any part of main window
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        root.geometry(f'{screen_width}x{screen_height - 100}')
 
-        img1 = Image.open("images/2-AI-invades-automobile-industry-in-2019.jpeg")  # AI Hand Image
+        img1 = Image.open("images/2-AI-invades-automobile-industry-in-2019.jpeg")
         img1 = img1.resize((1530, 800), Image.ANTIALIAS)
         self.photoImg1 = ImageTk.PhotoImage(img1)
         bg_lbl = Label(self.root, image=self.photoImg1)
         bg_lbl.place(x=0, y=0, width=1530, height=800)
 
-        title = Label(bg_lbl, text="Emotion Detection ", font=("times new roman", 35, "bold"), bg="white", fg="red")  # White strip of main
+        title = Label(bg_lbl, text="Emotion Detection ", font=("times new roman", 35, "bold"), bg="white", fg="red")
         title.place(x=0, y=120, width=1550, height=45)
 
-        myname = Label(self.root, text="Developed By: team impossible", fg="black", bg="white",
-                       font=("times new roman", 18, "bold"))  # Developed by
+        myname = Label(self.root, text="Developed By: team impossible", fg="black", bg="white", font=("times new roman", 18, "bold"))
         myname.place(x=0, y=0)
 
-        img10 = Image.open("images/facial-recognition_0.jpg")  # Image displaying of facial recognition
+        img10 = Image.open("images/facial-recognition_0.jpg")
         img10 = img10.resize((500, 120), Image.ANTIALIAS)
         self.photoImg10 = ImageTk.PhotoImage(img10)
         bg_lbl1 = Label(bg_lbl, image=self.photoImg10)
@@ -119,22 +115,18 @@ class First_Window:
         get_str = Label(frame, text="Get Started", font=("times new roman", 20, "bold"), fg="white", bg="black")
         get_str.place(x=95, y=85)
 
-        # LoginButton
-        btn_login = Button(frame, text="STATIC", borderwidth=5, relief=RAISED, command=call_GUI1, cursor="hand2",
-                           font=("times new roman", 20, "bold"), fg="white", bg="red", activebackground="#B00857")
+        btn_login = Button(frame, text="STATIC", borderwidth=5, relief=RAISED, command=call_GUI1, cursor="hand2", font=("times new roman", 20, "bold"), fg="white", bg="red", activebackground="#B00857")
         btn_login.place(x=75, y=160, width=200, height=50)
 
-        btn_login1 = Button(frame, text="REAL TIME", borderwidth=5, relief=RAISED, command=call_GUI2, cursor="hand2",
-                            font=("times new roman", 20, "bold"), fg="white", bg="red", activebackground="#B00857")
+        btn_login1 = Button(frame, text="REAL TIME", borderwidth=5, relief=RAISED, command=call_GUI2, cursor="hand2", font=("times new roman", 20, "bold"), fg="white", bg="red", activebackground="#B00857")
         btn_login1.place(x=75, y=270, width=200, height=50)
-
 
 class Second_Window:
     def __init__(self, root):
         self.root = root
         self.root.title("Static")
-        screen_width = root.winfo_screenwidth()  # Fetching screen width
-        screen_height = root.winfo_screenheight()  # Fetching screen height
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
         root.geometry(f'{screen_width}x{screen_height - 100}')
 
         frame = Frame(self.root, bg="black")
@@ -148,21 +140,17 @@ class Second_Window:
             x1 = entry1.get()
             emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful", 3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
 
-            # Load json and create model
             json_file = open('model/emotion_model.json', 'r')
             loaded_model_json = json_file.read()
             json_file.close()
             emotion_model = model_from_json(loaded_model_json)
 
-            # Load weights into new model
             emotion_model.load_weights("model/emotion_model.h5")
             print("Loaded model from disk")
 
-            # Pass here your video path
             cap = cv2.VideoCapture(x1)
 
             while True:
-                # Find haar cascade to draw bounding box around face
                 ret, frame = cap.read()
                 frame = cv2.resize(frame, (1280, 720))
                 if not ret:
@@ -170,19 +158,17 @@ class Second_Window:
                 face_detector = cv2.CascadeClassifier('haarcascades/haarcascade_frontalface_default.xml')
                 gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-                # Detect faces available on camera
                 num_faces = face_detector.detectMultiScale(gray_frame, scaleFactor=1.3, minNeighbors=5)
 
-                # Take each face available on the camera and Preprocess it
                 for (x, y, w, h) in num_faces:
                     cv2.rectangle(frame, (x, y - 50), (x + w, y + h + 10), (0, 255, 0), 4)
                     roi_gray_frame = gray_frame[y:y + h, x:x + w]
                     cropped_img = np.expand_dims(np.expand_dims(cv2.resize(roi_gray_frame, (48, 48)), -1), 0)
 
-                    # Predict the emotions
                     emotion_prediction = emotion_model.predict(cropped_img)
                     maxindex = int(np.argmax(emotion_prediction))
                     cv2.putText(frame, emotion_dict[maxindex], (x + 5, y - 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+                   
 
                 cv2.imshow('Emotion Detection', frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -190,12 +176,10 @@ class Second_Window:
             cap.release()
             cv2.destroyAllWindows()
 
-        button1 = Button(frame, text="Get Link", borderwidth=5, relief=RAISED, command=getLink, cursor="hand2",
-                         font=("times new roman", 20, "bold"), fg="white", bg="red", activebackground="#B00857")
+        button1 = Button(frame, text="Get Link", borderwidth=5, relief=RAISED, command=getLink, cursor="hand2", font=("times new roman", 20, "bold"), fg="white", bg="red", activebackground="#B00857")
         button1.place(x=75, y=160, width=200, height=50)
 
-        button2 = Button(frame, text="QUIT", borderwidth=5, relief=RAISED, command=root.destroy, cursor="hand2",
-                         font=("times new roman", 20, "bold"), fg="white", bg="red", activebackground="#B00857")
+        button2 = Button(frame, text="QUIT", borderwidth=5, relief=RAISED, command=root.destroy, cursor="hand2", font=("times new roman", 20, "bold"), fg="white", bg="red", activebackground="#B00857")
         button2.place(x=75, y=270, width=200, height=50)
 
 
@@ -222,8 +206,14 @@ class Third_Window:
         self.suggestion_label = Label(self.frame, text="Suggestion: ", font=("times new roman", 18, "bold"), fg="white", bg="black")
         self.suggestion_label.place(x=10, y=80)
 
-        self.button = Button(self.frame, text="Open Music Site", command=lambda: open_url(self.suggestion_url), state=DISABLED, font=("times new roman", 18, "bold"), fg="white", bg="red", activebackground="#B00857")
-        self.button.place(x=10, y=150)
+        self.music_button = Button(self.frame, text="Open Music Site", command=lambda: open_url(self.suggestion_url), state=DISABLED, font=("times new roman", 18, "bold"), fg="white", bg="red", activebackground="#B00857")
+        self.music_button.place(x=10, y=150)
+
+        self.game_button = Button(self.frame, text="Play Games", command=lambda: open_url("https://poki.com/en/online"), state=DISABLED, font=("times new roman", 18, "bold"), fg="white", bg="red", activebackground="#B00857")
+        self.game_button.place(x=10, y=220)
+
+        self.memory_button = Button(self.frame, text="Open Memory Folder", command=self.open_memory_folder, state=DISABLED, font=("times new roman", 18, "bold"), fg="white", bg="red", activebackground="#B00857")
+        self.memory_button.place(x=10, y=290)
 
         self.thread = threading.Thread(target=self.detect_emotions)
         self.thread.start()
@@ -260,17 +250,35 @@ class Third_Window:
         cap.release()
         cv2.destroyAllWindows()
 
-    def update_gui(self, emotion, suggestion):
+    def update_gui(self, emotion, suggestions):
         self.label.config(text=f"Emotion: {emotion}")
-        self.suggestion_label.config(text=f"Suggestion: {suggestion}")
-        if "http" in suggestion:
-            self.suggestion_url = suggestion
-            self.button.config(state=NORMAL)
+        suggestion_text = suggestions[1]
+        self.suggestion_label.config(text=f"Suggestion: {suggestion_text}")
+        self.music_button.config(state=DISABLED)
+        self.game_button.config(state=DISABLED)
+        self.memory_button.config(state=DISABLED)
+
+        # Handle music button
+        if "http" not in suggestions[0]:
+            self.music_button.config(state=DISABLED)
         else:
-            self.button.config(state=DISABLED)
+            self.suggestion_url = suggestions[0]
+            self.music_button.config(command=lambda: open_url(self.suggestion_url), state=NORMAL)
+
+        # Handle game button
+        if emotion in ["Angry", "Disgust"]:
+            self.game_button.config(state=NORMAL)
+
+        # Handle memory folder button
+        if emotion == "Neutral":
+            self.memory_button.config(state=NORMAL)
+
+    def open_memory_folder(self):
+        memory_folder_path = r"C:\Users\Dell\Desktop\EmotionDetection\memory"
+        os.startfile(memory_folder_path)
 
 
 if __name__ == "__main__":
     root = Tk()
-    app = First_Window(root)  # Corrected class name
+    app = First_Window(root)
     root.mainloop()
